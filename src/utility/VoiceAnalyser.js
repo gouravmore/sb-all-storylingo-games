@@ -7,20 +7,38 @@ import v5 from "../assets/audio/V5.m4a";
 import v6 from "../assets/audio/V6.m4a";
 import v7 from "../assets/audio/V7.m4a";
 import v8 from "../assets/audio/V8.m4a";
+import s1 from "../assets/audio/S1.m4a";
+import s2 from "../assets/audio/S2.m4a";
+import s3 from "../assets/audio/S3.m4a";
+import s4 from "../assets/audio/S4.m4a";
+import s5 from "../assets/audio/S5.m4a";
+import s6 from "../assets/audio/S6.m4a";
 import AudioCompare from "./AudioCompare";
 import Loader from "./Loader";
 /* eslint-disable */
 
 const AudioPath = {
-  0: v1,
-  1: v2,
-  2: v3,
-  3: v4,
-  4: v5,
-  5: v6,
-  6: v7,
-  7: v8,
+  1: {
+    0: v1,
+    1: v2,
+    2: v3,
+    3: v4,
+    4: v5,
+    5: v6,
+    6: v7,
+    7: v8,
+  },
+  2: {
+    0: s1,
+    1: s2,
+    2: s3,
+    3: s4,
+    4: s5,
+    5: s6,
+  },
 };
+const currentIndex = localStorage.getItem("index");
+console.log("get current index", currentIndex);
 function VoiceAnalyser(props) {
   const [loadCnt, setLoadCnt] = useState(0);
   const [loader, setLoader] = useState(false);
@@ -29,11 +47,39 @@ function VoiceAnalyser(props) {
   const [recordedAudioBase64, setRecordedAudioBase64] = useState("");
   const [audioPermission, setAudioPermission] = useState(null);
   const [ai4bharat, setAi4bharat] = useState("");
+  const [currentIndex, setCurrentIndex] = useState();
   const [temp_audio, set_temp_audio] = useState(null);
+  const initiateValues = async () => {
+    const currIndex = await localStorage.getItem("index");
+    setCurrentIndex(currIndex);
+  };
+
   const playAudio = (val) => {
-    set_temp_audio(new Audio(AudioPath[props.storyLine]));
+    set_temp_audio(new Audio(AudioPath[currentIndex][props.storyLine]));
     setPauseAudio(val);
   };
+
+  const DEFAULT_ASR_LANGUAGE_CODE = "ai4bharat/whisper-medium-en--gpu--t4";
+  // const HINDI_ASR_LANGUAGE_CODE = 'ai4bharat/conformer-hi-gpu--t4';
+  // const TAMIL_ASR_LANGUAGE_CODE = 'ai4bharat/conformer-multilingual-dravidian-gpu--t4';
+
+  const [asr_language_code, set_asr_language_code] = useState(
+    DEFAULT_ASR_LANGUAGE_CODE
+  );
+
+  // useEffect(() => {
+  // switch (lang_code) {
+  // case 'hi':
+  // 	set_asr_language_code(HINDI_ASR_LANGUAGE_CODE);
+  // 	break;
+  //   case 'ta':
+  // 	set_asr_language_code(TAMIL_ASR_LANGUAGE_CODE);
+  // 	break;
+  // default:
+  // 	set_asr_language_code(DEFAULT_ASR_LANGUAGE_CODE);
+  // 	break;
+  // }
+  // }, []);
 
   useEffect(() => {
     console.log("check temp audio", temp_audio && temp_audio.play());
@@ -57,6 +103,10 @@ function VoiceAnalyser(props) {
       }
     };
   }, [temp_audio]);
+
+  useEffect(() => {
+    initiateValues();
+  }, []);
 
   useEffect(() => {
     if (loadCnt === 0) {
@@ -101,9 +151,12 @@ function VoiceAnalyser(props) {
   }, [ai4bharat]);
 
   const fetchASROutput = (sourceLanguage, base64Data) => {
+  const URL = process.env.REACT_APP_URL;   
+   const asr_api_key = process.env.REACT_APP_ASR_API_KEY;
     let samplingrate = 30000;
     var myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Authorization", asr_api_key);
     var payload = JSON.stringify({
       config: {
         language: {
@@ -128,7 +181,8 @@ function VoiceAnalyser(props) {
       body: payload,
       redirect: "follow",
     };
-    const apiURL = `https://asr-api.ai4bharat.org/asr/v1/recognize/en`;
+    // const apiURL_2 = `https://asr-api.ai4bharat.org/asr/v1/recognize/en`;
+    const apiURL = `${URL}=${asr_language_code}`;
     fetch(apiURL, requestOptions)
       .then((response) => response.text())
       .then((result) => {
@@ -162,12 +216,13 @@ function VoiceAnalyser(props) {
   //   );
   // };
   const getpermision = () => {
-    navigator.mediaDevices.getUserMedia({ audio: true })
-      .then(stream => {
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((stream) => {
         console.log("Permission Granted");
         setAudioPermission(true);
       })
-      .catch(error => {
+      .catch((error) => {
         console.log("Permission Denied");
         setAudioPermission(false);
         //alert("Microphone Permission Denied");

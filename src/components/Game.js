@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import playerTitle from "../assets/gt1.png";
 import playerTitle2 from "../assets/turn2.png";
 import coin from "../assets/audio/coin.mp3";
@@ -9,30 +9,45 @@ import logo from "../assets/logo.png";
 import VoiceAnalyser from "../utility/VoiceAnalyser";
 import SoundWave from "../utility/SoundWave";
 
-const Story = [
-  "A man was walking nearby to a group of elephants that was halted by a small rope tied to their front leg.",
+// const Story =[
+//   "A man was walking nearby to a group of elephants that was halted by a small rope tied to their front leg.",
 
-  "He was amazed by the fact that the huge elephants are not even making an attempt to break the rope and set themselves free.",
+//   "He was amazed by the fact that the huge elephants are not even making an attempt to break the rope and set themselves free.",
 
-  "He saw an elephant trainer standing beside them and he expressed his puzzled state of mind.",
+//   "He saw an elephant trainer standing beside them and he expressed his puzzled state of mind.",
 
-  "The trainer said “When they are very young and much smaller we use the same size rope to tie them and, at that age, it’s enough to hold them.",
+//   "The trainer said “When they are very young and much smaller we use the same size rope to tie them and, at that age, it’s enough to hold them.",
 
-  "As they grow up, they are conditioned to believe they cannot break away. They believe the rope can still hold them, so they never try to break free.",
+//   "As they grow up, they are conditioned to believe they cannot break away. They believe the rope can still hold them, so they never try to break free.",
 
-  "Moral of the story: It is the false belief of the elephants that denied their freedom for a lifetime.",
+//   "Moral of the story: It is the false belief of the elephants that denied their freedom for a lifetime.",
 
-  "Likewise, many people are not trying to work towards success in their life just because they failed once before.",
+//   "Likewise, many people are not trying to work towards success in their life just because they failed once before.",
 
-  "So keep on trying and don’t get tied up with some false beliefs of failure.",
-  "The End! Check Result to find the Winner!!",
-];
+//   "So keep on trying and don’t get tied up with some false beliefs of failure.",
+//   "The End! Check Result to find the Winner!!",
+// ];
 
 function Game() {
   const [recordedAudio, setRecordedAudio] = useState("");
+  const [Story, setStory] = useState([]);
   const [voiceText, setVoiceText] = useState("");
+  const [currentIndex,setCurrentIndex] = useState(0);
   // const [newtextresult, setnewtextresult] = useState('');
   // const [voiceTextHighlight, setVoiceTextHighLight] = useState('');
+  const initiateValues = async () => {
+    const currIndex = await localStorage.getItem("index");
+    setCurrentIndex(currIndex);
+    const temp = await localStorage.getItem("story");
+
+    let story = JSON.parse(temp)?.val;
+    setStory(story);
+    console.log("fd", story, temp);
+  };
+  useLayoutEffect(() => {
+    initiateValues();
+  }, []);
+
   const [player1Score, setPlayer1Score] = useState(0);
   const [player2Score, setPlayer2Score] = useState(0);
   const [storyLine, setStoryLine] = useState(0);
@@ -40,7 +55,7 @@ function Game() {
   // const [fluencyResult, setfluencyresult] = useState('');
   let player1 = localStorage.getItem("p1");
   let player2 = localStorage.getItem("p2");
-  let numberOfPlayers = localStorage.getItem('players');
+  let numberOfPlayers = localStorage.getItem("players");
 
   function go_to_result(voiceText) {
     localStorage.setItem("contentText", Story[storyLine]);
@@ -90,12 +105,12 @@ function Game() {
         Number((correct_words / studentswords) * 100)
       );
     }
-    if (storyLine % 2 === 0 || numberOfPlayers === 'p1s') {
+    if (storyLine % 2 === 0 || numberOfPlayers === "p1s") {
       let temp = player1Score + result_per_words;
       setPlayer1Score(temp);
       localStorage.setItem("score1", temp);
     }
-    if (storyLine % 2 === 1 && numberOfPlayers !== 'p1s') {
+    if (storyLine % 2 === 1 && numberOfPlayers !== "p1s") {
       let temp = player2Score + result_per_words;
       setPlayer2Score(temp);
       localStorage.setItem("score2", temp);
@@ -140,7 +155,7 @@ function Game() {
           alt="logo"
           style={{ cursor: "pointer" }}
         />
-        <Link to='/'>
+        <Link to="/">
           <img
             src={homeicon}
             height="25px"
@@ -150,12 +165,18 @@ function Game() {
         </Link>
       </div>
       <div>
-        {storyLine < 8 && (
+        {storyLine <= Story.length - 1 && (
           <img
-            src={numberOfPlayers === 'p1s'?playerTitle:storyLine % 2 === 0 ? playerTitle : playerTitle2}
+            src={
+              numberOfPlayers === "p1s"
+                ? playerTitle
+                : storyLine % 2 === 0
+                ? playerTitle
+                : playerTitle2
+            }
             height="60px"
             alt="player1"
-            style={window.screen.width < 767 ? { marginTop: '50px' } : {}}
+            style={window.screen.width < 767 ? { marginTop: "50px" } : {}}
             className="playPlayerTitle"
           />
         )}
@@ -163,19 +184,23 @@ function Game() {
       <div
         className="play-grid"
         style={
-          storyLine < 8
+          storyLine <= Story.length - 1
             ? {}
             : {
-              gridTemplateColumns: "none",
-              height: "70vh",
-              alignItems: "center",
-            }
+                gridTemplateColumns: "none",
+                height: "70vh",
+                alignItems: "center",
+              }
         }
       >
-        {storyLine < 8 && (
+        {storyLine <= Story.length - 1 && (
           <div
             className="progress desktop-progress"
-            style={storyLine % 2 === 1  && numberOfPlayers !== 'p1s'? { opacity: 0.3 } : {}}
+            style={
+              storyLine % 2 === 1 && numberOfPlayers !== "p1s"
+                ? { opacity: 0.3 }
+                : {}
+            }
           >
             <div>
               <img
@@ -187,7 +212,11 @@ function Game() {
             <div className="barcontainer">
               <div
                 className="bar"
-                style={numberOfPlayers === 'p1s'?{ height: `${player1Score / 8}%` }:{ height: `${player1Score / 4}%` }}
+                style={
+                  numberOfPlayers === "p1s"
+                    ? { height: `${player1Score / Story.length}%` }
+                    : { height: `${player1Score / (Story.length / 2)}%` }
+                }
               ></div>
             </div>
             <div>
@@ -213,13 +242,15 @@ function Game() {
         <div className="read">
           <img
             src={
-              storyLine < 9
-                ? require(`../assets/story${storyLine}.png`)
+              storyLine <= Story.length - 1
+                ? require(`../assets/story${currentIndex}${storyLine}.png`)
                 : require(`../assets/over.png`)
             }
-            className={storyLine < 8 ? "read-img" : "read-img-over"}
+            className={
+              storyLine <= Story.length - 1 ? "read-img" : "read-img-over"
+            }
             alt="read"
-          // style={storyLine <8  && window.screen.width>767? { height: "170px" } : {height:"90px !important" }}
+            // style={storyLine <8  && window.screen.width>767? { height: "170px" } : {height:"90px !important" }}
           />
           {/* <div className='story-txt'> {Story[storyLine]}</div> */}
           {voiceAnimate && (
@@ -228,17 +259,17 @@ function Game() {
             </div>
           )}
         </div>
-        {storyLine < 8 && numberOfPlayers !== 'p1s' && (
+        {storyLine <= Story.length - 1 && numberOfPlayers !== "p1s" && (
           <div
             className="desktop-progress"
             style={
               storyLine % 2 === 0
                 ? {
-                  opacity: 0.3,
-                  textAlign: "right",
-                  width: "91px",
-                  margin: "0 0 0 auto",
-                }
+                    opacity: 0.3,
+                    textAlign: "right",
+                    width: "91px",
+                    margin: "0 0 0 auto",
+                  }
                 : { textAlign: "right", width: "91px", margin: "0 0 0 auto" }
             }
           >
@@ -291,10 +322,11 @@ function Game() {
       </div>
 
       <div className="play-grid-mobile">
-        {storyLine < 8 && (
+        {storyLine <= Story.length - 1 && (
           <div
             style={{
-              opacity: storyLine % 2 === 1 && numberOfPlayers !== 'p1s'? "0.3" : "1",
+              opacity:
+                storyLine % 2 === 1 && numberOfPlayers !== "p1s" ? "0.3" : "1",
             }}
             className="mobile-bar-container"
           >
@@ -327,7 +359,11 @@ function Game() {
               />
               <div
                 className="mobile-game-bar"
-                style={numberOfPlayers==='p1s'?{ width: `${player1Score / 8}%` }:{ width: `${player1Score / 4}%` }}
+                style={
+                  numberOfPlayers === "p1s"
+                    ? { width: `${player1Score / Story.length}%` }
+                    : { width: `${player1Score / (Story.length / 2)}%` }
+                }
               ></div>
             </div>
             <div>
@@ -340,7 +376,7 @@ function Game() {
             </div>
           </div>
         )}
-        {storyLine < 8 && numberOfPlayers !== 'p1s' && (
+        {storyLine <= Story.length - 1 && numberOfPlayers !== "p1s" && (
           <div
             style={{
               opacity: storyLine % 2 === 0 ? "0.3" : "1",
@@ -392,7 +428,7 @@ function Game() {
       </div>
       {/* <Link to='/result' style={{textDecoration:'none'}}> */}
       <div>
-        {storyLine >= Story.length - 1 ? (
+        {storyLine > Story.length - 1 ? (
           <Link to="/result" style={{ textDecoration: "none" }}>
             <div className="btn-result" style={{ right: 0 }}>
               <img height="30px" width="auto" src={result} alt={"home"} />
@@ -404,7 +440,7 @@ function Game() {
             setRecordedAudio={setRecordedAudio}
             setVoiceAnimate={setVoiceAnimate}
             storyLine={storyLine}
-          // updateStory={updateStory}
+            // updateStory={updateStory}
           />
         )}
       </div>
